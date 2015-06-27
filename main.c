@@ -1,6 +1,9 @@
 
 #include "io430.h"
 
+static volatile unsigned int temp = 0;
+static volatile unsigned int timerTicks = 0;
+
 int main( void )
 {
   // Stop watchdog timer to prevent time out reset
@@ -34,9 +37,19 @@ int main( void )
   // ADC STUFF---------------------------
   // Turn on the ADC and ref voltage
   ADC10CTL0 |=  ADC10ON + REFON + ENC + ADC10SC;
-  
-    
-  
-  
+
   return 0;
+}
+
+#pragma vector=ADC10_VECTOR
+__interrupt void ADC10_ISR(void)
+{
+	temp = ADC10MEM;
+}
+
+#pragma vector=TIMERA_VECTOR
+__interrupt void TIMERA_ISR(void)
+{
+	timerTicks++;
+	ADC10CTL0 |= ADC10SC; // Start another conversion
 }
