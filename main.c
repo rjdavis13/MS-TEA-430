@@ -1,11 +1,20 @@
 
 #include "io430.h"
 
-static volatile unsigned int temp = 0;
-static volatile unsigned int timerTicks = 0;
+// Global variables
+static volatile unsigned int gTemp = 0;        // Raw ADC10 value from the most recent conversion
+static volatile unsigned int gTimerTicks = 0;  // Total number of seconds
+static volatile char gState = 0;               // Keep track of which operations need to be done while in the main loop
+
+#define ADCMATH BIT0
+#define TATICK	BIT1
 
 int main( void )
 {
+  // The temperature reading from the external temperature sensor (after conversion from ADC counts)
+  unsigned int temperature = 25;
+  unsigned int timeLimit = 480;
+  
   // Stop watchdog timer to prevent time out reset
   WDTCTL = WDTPW + WDTHOLD;  
   
@@ -22,7 +31,7 @@ int main( void )
   
   // Set up the timer A - Use the system master crystal and have it count up
   // With this crystal TACCR will be 32768
-  TACTL = TACLR | TASSEL0; //clear timer A, Select clock source 0
+  TACTL = TACLR | TASSEL0; // Clear timer A, Select clock source 0 (LFXTAL)
   TACCR0 = 32768;          // 0ne Second PLZ! 
   
   // Setting up the ADC, will make some changes later
@@ -35,8 +44,9 @@ int main( void )
   //Enable interrupts now that setup is done
   __enable_interrupt();
   
-  // Enable the compare ISR.
+  // Enable the compare ISR on TimerA CCR0
   TACCTL0 |= CCIE;
+  
   //Starting the timer in up mode
   TACTL |= MC0;   // going into up mode starts the (one second) timer!
   
@@ -47,7 +57,16 @@ int main( void )
   //LOOPS
   while(1)
   {
-    __low_power_mode_0();
+    if(gState & ADCMATH){
+      // Add all the conversion math goes here!!
+      temperature = gTemp;
+    }
+    else if(gState & TATICK){
+      if(gTimerTicks >= timeLimit){
+        
+      }
+    }
+  else __low_power_mode_0();
   }
   return 0;
 }
@@ -55,15 +74,19 @@ int main( void )
 #pragma vector=ADC10_VECTOR
 __interrupt void ADC10_ISR(void) 
 {
-	temp = ADC10MEM; //temp variable is set to the value the ADC has just finished converting
+  gTemp = ADC10MEM; 			// Store the ADC result in the global variable gTemp
+  gState |= ADCMATH;			// Set this state so that the result can be processed in the main loop
+  __low_power_mode_off_on_exit();	// Wake the processor when this ISR exits
 }
 
 #pragma vector=TIMERA0_VECTOR
 __interrupt void TIMERA0_ISR(void)
 {
-  timerTicks++;
-  ADC10CTL0 |= ADC10SC; // Start another conversion
-  TACCTL1 &= ~CCIFG;
+  gTimerTicks++;			// Add one to the timer counter
+  ADC10CTL0 |= ADC10SC;			// Start another conversion
+  TACCTL0 &= ~CCIFG;			// Clear the timer interrupt flag
+  gState |= TATICK;			// Set the state so that the main loop will check the elapsed time
+  __low_power_mode_off_on_exit();	// Wake the processor when this ISR exits
 }
 
 // DONT USE THIS ONE!!!!! AAAAAAAA X____X
