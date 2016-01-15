@@ -25,9 +25,15 @@ int main( void )
   IE1 |= OFIE;     // An immedate Osc Fault will occur next
 
   // Set up clock system (remember its hex) also for future ref, no MAGIC Numbers! I mean do you remember what any of these do?! now you have to look them up again
-  BCSCTL1 = 0x0080;
-  BCSCTL2 = 0x0088;
-  BCSCTL3 = 0x0004;
+  //BCSCTL1 = 0x0080;
+  BCSCTL1 |= XT2OFF; //Turn off XT2, it is not used for MCLK or SMCLK
+  BCSCTL2 &= RSEL_0;  
+  
+  //BCSCTL2 = 0x0088;
+  BCSCTL2 |= SLEM_2 + SELS; //XT2CLK for MCLK and SMCLK
+
+  //BCSCTL3 = 0x0004;
+  BCSCTL3 |= XCAP_1;
   
   // Set up the timer A - Use the system master crystal and have it count up
   // With this crystal TACCR will be 32768
