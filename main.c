@@ -24,7 +24,7 @@ int main( void )
   // Enable the crystal osc fault. The xtal startup process
   IE1 |= OFIE;     // An immedate Osc Fault will occur next
 
-  // Set up clock system (remember its hex) also for future ref, no MAGIC Numbers! I mean do you remember what any of these do?! now you have to look them up again
+  // Set up clock system
   //BCSCTL1 = 0x0080;
   BCSCTL1 |= XT2OFF; //Turn off XT2, it is not used for MCLK or SMCLK
   BCSCTL2 &= RSEL_0;  
