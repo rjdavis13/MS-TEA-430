@@ -8,6 +8,7 @@ static volatile char gState = 0;               // Keep track of which operations
 #define ADCMATH BIT0
 #define TATICK	BIT1
 
+
 int main( void )
 {
   // The temperature reading from the external temperature sensor (after conversion from ADC counts)
@@ -77,15 +78,28 @@ int main( void )
   return 0;
 }
 
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=ADC10_VECTOR
+__interrupt void adc10_isr (void)
+#elif defined(__GNUC__)
 void __attribute__ ((interrupt(ADC10_VECTOR))) adc10_isr (void)
+#else
+#error Compiler not supported!
+#endif
 {
   gTemp = ADC10MEM; 			// Store the ADC result in the global variable gTemp
   gState |= ADCMATH;			// Set this state so that the result can be processed in the main loop
   __low_power_mode_off_on_exit();	// Wake the processor when this ISR exits
 }
 
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector=TIMERA0_VECTOR
+__interrupt void timera0_isr (void)
+#elif defined(__GNUC__)
 void __attribute__ ((interrupt(TIMERA0_VECTOR))) timera0_isr (void)
+#else
+#error Compiler not supported!
+#endif
 {
   gTimerTicks++;			// Add one to the timer counter
   ADC10CTL0 |= ADC10SC;			// Start another conversion
@@ -94,12 +108,6 @@ void __attribute__ ((interrupt(TIMERA0_VECTOR))) timera0_isr (void)
   __low_power_mode_off_on_exit();	// Wake the processor when this ISR exits
 }
 
-// DONT USE THIS ONE!!!!! AAAAAAAA X____X
-// void __attribute__ ((interrupt(TIMERA1_VECTOR))) timera1_isr (void)
-// {
-//   //NOPE
-//   __no_operation();
-// }
 
 /*********************************************
 The LF XTAL error flag is going to get set
@@ -109,7 +117,15 @@ it here.
 (Warning: We arent checking for any
           other sources of NMIs!)
 **********************************************/
+
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector=NMI_VECTOR
+__interrupt void nmi_isr (void)
+#elif defined(__GNUC__)
 void __attribute__ ((interrupt(NMI_VECTOR))) nmi_isr (void)
+#else
+#error Compiler not supported!
+#endif
 {
   __no_operation();
   unsigned int i;
