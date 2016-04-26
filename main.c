@@ -1,5 +1,4 @@
-
-#include "io430.h"
+#include "msp430.h"
 
 // Global variables
 static volatile unsigned int gTemp = 0;        // Raw ADC10 value from the most recent conversion
@@ -14,10 +13,10 @@ int main( void )
   // The temperature reading from the external temperature sensor (after conversion from ADC counts)
   unsigned int temperature = 25;
   unsigned int timeLimit = 480;
-  
+
   // Stop watchdog timer to prevent time out reset
-  WDTCTL = WDTPW + WDTHOLD;  
-  
+  WDTCTL = WDTPW + WDTHOLD;
+
   // Disable interrupts for the setup
   //__disable_interrupt();
 
@@ -27,39 +26,39 @@ int main( void )
   // Set up clock system
   //BCSCTL1 = 0x0080;
   BCSCTL1 |= XT2OFF; //Turn off XT2, it is not used for MCLK or SMCLK
-  BCSCTL2 &= RSEL_0;  
-  
+  BCSCTL2 &= RSEL0;
+
   //BCSCTL2 = 0x0088;
-  BCSCTL2 |= SLEM_2 + SELS; //XT2CLK for MCLK and SMCLK
+  BCSCTL2 |= SELM_2 + SELS; //XT2CLK for MCLK and SMCLK
 
   //BCSCTL3 = 0x0004;
   BCSCTL3 |= XCAP_1;
-  
+
   // Set up the timer A - Use the system master crystal and have it count up
   // With this crystal TACCR will be 32768
   TACTL = TACLR | TASSEL0; // Clear timer A, Select clock source 0 (LFXTAL)
-  TACCR0 = 32768;          // 0ne Second PLZ! 
-  
+  TACCR0 = 32768;          // 0ne Second PLZ!
+
   // Setting up the ADC, will make some changes later
   ADC10CTL0 = REFON | REFBURST | ADC10SR | ADC10SHT0 | ADC10SHT1 | SREF0 ;
   ADC10CTL1 = 0x0000; // THIS SETS INCHx TO A0
   ADC10AE0 = BIT0; //ENABLE THE 0 PIN FOR ADC USE
 
   //Setup is done------------------------
-  
+
   //Enable interrupts now that setup is done
   __enable_interrupt();
-  
+
   // Enable the compare ISR on TimerA CCR0
   TACCTL0 |= CCIE;
-  
+
   //Starting the timer in up mode
   TACTL |= MC0;   // going into up mode starts the (one second) timer!
-  
+
   // ADC STUFF---------------------------
   // Turn on the ADC and ref voltage
   ADC10CTL0 |=  ADC10ON + REFON + ENC + ADC10SC; //this will also take readings and start conversion, ADC interrupts when conversion is done
-  
+
   //LOOPS
   while(1)
   {
@@ -69,7 +68,7 @@ int main( void )
     }
     else if(gState & TATICK){
       if(gTimerTicks >= timeLimit){
-        
+
       }
     }
   else __low_power_mode_0();
@@ -78,15 +77,14 @@ int main( void )
 }
 
 #pragma vector=ADC10_VECTOR
-__interrupt void ADC10_ISR(void) 
+void __attribute__ ((interrupt(ADC10_VECTOR))) adc10_isr (void)
 {
   gTemp = ADC10MEM; 			// Store the ADC result in the global variable gTemp
   gState |= ADCMATH;			// Set this state so that the result can be processed in the main loop
   __low_power_mode_off_on_exit();	// Wake the processor when this ISR exits
 }
 
-#pragma vector=TIMERA0_VECTOR
-__interrupt void TIMERA0_ISR(void)
+void __attribute__ ((interrupt(TIMERA0_VECTOR))) timera0_isr (void)
 {
   gTimerTicks++;			// Add one to the timer counter
   ADC10CTL0 |= ADC10SC;			// Start another conversion
@@ -96,12 +94,11 @@ __interrupt void TIMERA0_ISR(void)
 }
 
 // DONT USE THIS ONE!!!!! AAAAAAAA X____X
-#pragma vector=TIMERA1_VECTOR
-__interrupt void TIMERA1_ISR(void)
-{
-  //NOPE
-  __no_operation();
-}
+// void __attribute__ ((interrupt(TIMERA1_VECTOR))) timera1_isr (void)
+// {
+//   //NOPE
+//   __no_operation();
+// }
 
 /*********************************************
 The LF XTAL error flag is going to get set
@@ -111,8 +108,7 @@ it here.
 (Warning: We arent checking for any
           other sources of NMIs!)
 **********************************************/
-#pragma vector=NMI_VECTOR
-__interrupt void nmi_ (void)
+void __attribute__ ((interrupt(NMI_VECTOR))) nmi_isr (void)
 {
   __no_operation();
   unsigned int i;
