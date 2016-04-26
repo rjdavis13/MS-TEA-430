@@ -9,8 +9,7 @@ static volatile char gState = 0;               // Keep track of which operations
 #define TATICK	BIT1
 
 
-int main( void )
-{
+int main (void) {
   // The temperature reading from the external temperature sensor (after conversion from ADC counts)
   unsigned int temperature = 25;
   unsigned int timeLimit = 480;
@@ -62,18 +61,17 @@ int main( void )
   ADC10CTL0 |=  ADC10ON + REFON + ENC + ADC10SC;
 
   //LOOPS
-  while(1)
-  {
-    if(gState & ADCMATH){
+  while(1) {
+    if(gState & ADCMATH) {
       // Add all the conversion math goes here!!
       temperature = gTemp;
-    }
-    else if(gState & TATICK){
-      if(gTimerTicks >= timeLimit){
+    } else if(gState & TATICK) {
+      if(gTimerTicks >= timeLimit) {
 
       }
+    } else {
+      __low_power_mode_0();
     }
-  else __low_power_mode_0();
   }
   return 0;
 }
@@ -129,12 +127,10 @@ void __attribute__ ((interrupt(NMI_VECTOR))) nmi_isr (void)
 {
   __no_operation();
   unsigned int i;
-  do
-  {
+  do {
     IFG1 &= ~OFIFG;                         // Clear OSCFault flag
     for (i = 0xFFF; i > 0; i--);            // Time for flag to set
     //P1OUT ^= 0x01;                          // Toggle P1.0 using exclusive-OR
-  }
-  while (IFG1 & OFIFG);                     // OSCFault flag still set?
+  } while (IFG1 & OFIFG);                     // OSCFault flag still set?
   IE1 |= OFIE;                              // Enable Osc Fault
 }
