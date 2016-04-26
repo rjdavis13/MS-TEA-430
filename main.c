@@ -57,7 +57,8 @@ int main( void )
 
   // ADC STUFF---------------------------
   // Turn on the ADC and ref voltage
-  ADC10CTL0 |=  ADC10ON + REFON + ENC + ADC10SC; //this will also take readings and start conversion, ADC interrupts when conversion is done
+  // this will also take readings and start conversion, ADC interrupts when conversion is done
+  ADC10CTL0 |=  ADC10ON + REFON + ENC + ADC10SC;
 
   //LOOPS
   while(1)
