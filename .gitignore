@@ -50,3 +50,7 @@ settings
 *.ewp
 *.~vsd
 *.eww
+
+# Object files
+a.out
+*.o
