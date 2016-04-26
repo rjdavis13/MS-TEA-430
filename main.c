@@ -1,4 +1,4 @@
-#include "msp430.h"
+#include <msp430.h>
 
 // Global variables
 static volatile unsigned int gTemp = 0;        // Raw ADC10 value from the most recent conversion
